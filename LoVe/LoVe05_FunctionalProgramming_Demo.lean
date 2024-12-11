@@ -229,8 +229,12 @@ instance List.Inhabited {α : Type} : Inhabited (List α) :=
 #eval (Inhabited.default : ℕ)
 #eval (Inhabited.default : List Int)
 
+-- variable (α:Type) [Inhabited α]
+-- #check @Inhabited.default α _
+
 def head {α : Type} [Inhabited α] : List α → α
-  | []     => Inhabited.default
+  -- | []     => @Inhabited.default α _
+  | []     => Inhabited.default -- 上面一行是完整写法
   | x :: _ => x
 
 theorem head_head {α : Type} [Inhabited α] (xs : List α) :
@@ -243,7 +247,10 @@ theorem head_head {α : Type} [Inhabited α] (xs : List α) :
 
 instance Fun.Inhabited {α β : Type} [Inhabited β] :
   Inhabited (α → β) :=
-  { default := fun a : α ↦ Inhabited.default }
+  { default := fun a : α ↦ @Inhabited.default β _ } -- 和下一行等价：
+  -- { default := fun a : α ↦ Inhabited.default }
+
+
 
 instance Prod.Inhabited {α β : Type}
     [Inhabited α] [Inhabited β] :
@@ -301,7 +308,10 @@ theorem injection_example {α : Type} (x y : α) (xs ys : List α)
 theorem distinctness_example {α : Type} (y : α) (ys : List α)
     (h : [] = y :: ys) :
   false :=
-  by cases h
+  by
+    simp only
+    simp only at h
+  -- cases h
 
 def map {α β : Type} (f : α → β) : List α → List β
   | []      => []
@@ -393,7 +403,7 @@ theorem min_add_add_if (l m n : ℕ) :
 theorem length_zip {α β : Type} (xs : List α) (ys : List β) :
   length (zip xs ys) = min (length xs) (length ys) :=
   by
-    induction xs generalizing ys with
+    induction xs generalizing ys with -- ys是可变的。
     | nil           => simp [min, length]
     | cons x xs' ih =>
       cases ys with

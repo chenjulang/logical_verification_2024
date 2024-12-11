@@ -61,9 +61,15 @@ def connect {α : Type} {β : Type} :
 
 def sum257Connect (ns : List ℕ) : Option ℕ :=
   connect (nth ns 1)
-    (fun n₂ ↦ connect (nth ns 4)
-       (fun n₅ ↦ connect (nth ns 6)
-          (fun n₇ ↦ Option.some (n₂ + n₅ + n₇))))
+    (fun n₂ ↦
+      connect
+        (nth ns 4)
+        (fun n₅ ↦ connect (nth ns 6)
+            (fun n₇ ↦
+              Option.some (n₂ + n₅ + n₇)
+            )
+        )
+    )
 
 /- Instead of defining `connect` ourselves, we can use Lean's predefined
 general `bind` operation. We can also use `pure` instead of `Option.some`: -/

@@ -1,5 +1,8 @@
 # Logical Verification 2024
 
+videos:
+https://lean-forward.github.io/logical-verification/2022/index.html
+
 Files associated with the Hitchhiker's Guide to Logical Verification (2024 Edition).
 
 
