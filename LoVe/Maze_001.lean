@@ -1,27 +1,59 @@
 import Lean
 
+/-- 游戏状态 -/
 structure GameState where
   position : Nat
   goal : Nat
 
--- syntax语法 start
+-- 游戏里的格子放的什么 [start
+
+inductive CellContents where
+  | empty  : CellContents
+  | player : CellContents
+  | goal   : CellContents
+
+/-- 通过游戏里的所有格子放的什么，推断出游戏当前的状态 -/
+def game_state_from_cells :
+List CellContents → GameState
+ | [] =>
+  ⟨0,0⟩
+ | CellContents.empty::cells =>
+  let ⟨p,g⟩ := game_state_from_cells cells
+  ⟨p+1, g+1⟩
+ | CellContents.player::cells =>
+  let ⟨p,g⟩ := game_state_from_cells cells
+  ⟨0, g+1⟩
+ | CellContents.goal::cells =>
+  let ⟨p,g⟩ := game_state_from_cells cells
+  ⟨p+1, 0⟩
+#reduce game_state_from_cells [CellContents.goal, CellContents.player, CellContents.empty, CellContents.empty] -- 打印：{ position := 1, goal := 0 }
+
+-- 游戏里的格子放的什么 end]
+
+
+-- syntax语法 [start
 
 declare_syntax_cat game_cell
 declare_syntax_cat game_cell_sequence
-syntax "┤" game_cell_sequence "├ ": term
+
 syntax "★" : game_cell
 syntax "░" : game_cell
 syntax "@" : game_cell
+
 syntax game_cell* : game_cell_sequence
 
+syntax "┤" game_cell_sequence "├ ": term
+
+
 macro_rules
-| `(┤├) => `((⟨1, 3⟩ : GameState))
-| `(┤$cell:game_cell $cells:game_cell*├) => `((⟨2, 3⟩ : GameState))
+| `(┤├) => `( (⟨1, 3⟩ : GameState) )
+| `(┤$cell:game_cell $cells:game_cell*├) => `( (⟨123, 999⟩ : GameState) )
+
 --| `(┤░░├) => `((⟨1, 3⟩ : GameState))
 
-#check ┤░░░░├
+-- #check ┤░░░░├ -- 打印： { position := 123, goal := 999 } : GameState
 
--- syntax语法 end
+-- syntax语法 end]
 
 
 
