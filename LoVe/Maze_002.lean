@@ -47,8 +47,33 @@ syntax "┤{" game_cell_sequence "}├": term
 
 
 macro_rules
-| `(┤├) => `( (⟨1, 3⟩ : GameState) )
-| `(┤$cell:game_cell $cells:game_cell*├) => `( (⟨123, 999⟩ : GameState) )
+-- 002new：
+| `(┤{}├) => `(([] : List CellContents))
+| `(┤{░ $cells:game_cell* }├) => `( CellContents.empty :: ┤{$cells:game_cell*}├)
+| `(┤{★ $cells:game_cell* }├) => `( CellContents.goal :: ┤{$cells:game_cell*}├)
+| `(┤{@ $cells:game_cell* }├) => `( CellContents.player :: ┤{$cells:game_cell*}├)
+
+-- | `(┤├) => `( (⟨1, 3⟩ : GameState) )
+-- | `(┤$cell:game_cell $cells:game_cell*├) => `( (⟨123, 999⟩ : GameState) )
+
+-- 002new：
+macro_rules
+| `(┤$cells:game_cell*├) => `(game_state_from_cells  ┤{$cells:game_cell*}├ )
+
+#reduce ┤░@░★░░├
+
+#check GameState.mk
+
+-- 002new：
+-- @[appUnexpander GameState]
+def unexpandGameState : Lean.PrettyPrinter.Unexpander
+--  | `({ position := $p, goal := $g}) => `(┤░@░★░░├)
+  | `(GameState $p $g) => `(┤░@░░░░★░░├)
+  | _              => throw ()
+
+#reduce ┤░@░★░░├
+
+
 
 --| `(┤░░├) => `((⟨1, 3⟩ : GameState))
 
