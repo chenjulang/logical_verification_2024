@@ -1,4 +1,9 @@
 import Lean
+-- import Lean.PrettyPrinter.Delaborator.SubExpr
+
+-- open Lean.SubExpr
+
+
 
 /-- 第0步：游戏状态 -/
 structure GameState where
@@ -66,10 +71,24 @@ macro_rules
 
 -- 002new：
 -- @[appUnexpander GameState]
-def unexpandGameState : Lean.PrettyPrinter.Unexpander
+-- def unexpandGameState : Lean.PrettyPrinter.Unexpander
 --  | `({ position := $p, goal := $g}) => `(┤░@░★░░├)
-  | `(GameState $p $g) => `(┤░@░░░░★░░├)
-  | _              => throw ()
+  -- | `(GameState $p $g) => `(┤░@░░░░★░░├)
+  -- | _              => throw ()
+
+-- 003new:
+@[delab app.GameState.mk] def delabGameState : Lean.PrettyPrinter.Delaborator.Delab := do
+  let e ← Lean.PrettyPrinter.Delaborator.SubExpr.getExpr
+  guard $ e.getAppNumArgs == 2
+  let p ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
+           $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.delab
+  -- how to get an integer from p?
+  let g ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.delab
+  let y ← `(game_cell| ░)
+  let x ← Array.mkArray g.isNatLit?.get! y
+
+  dbg_trace p
+  `(┤$x:game_cell*├) -- TODO
 
 #reduce ┤░@░★░░├
 
