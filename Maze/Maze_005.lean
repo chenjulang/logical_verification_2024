@@ -82,23 +82,33 @@ macro_rules
   let e ← Lean.PrettyPrinter.Delaborator.SubExpr.getExpr
   -- 004new: delabGameState这个终于正常运行了
   guard $ e.getAppNumArgs == 3
-  let p ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
-           $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
-           $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.delab
+  -- 005new:
+  -- let p ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
+  --          $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
+  --          $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.delab
   let g ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
            $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.delab
   let s ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.delab
   let e ← `(game_cell| ░)
   let player ← `(game_cell| @)
   let goalc ← `(game_cell| ★)
-  let position : Nat := p.raw.isNatLit?.get!
+  -- 005new:
+  -- let position : Nat := p.raw.isNatLit?.get!
+    let pexpr:Lean.Expr ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
+           $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
+           $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.SubExpr.getExpr
+  dbg_trace pexpr
+  let position' ← (Lean.Meta.whnf pexpr)
+  let position : Nat := (Lean.Expr.natLit? position').get!
+
   let goal : Nat := g.raw.isNatLit?.get!
   let size : Nat := s.raw.isNatLit?.get!
   let a0 := Array.mkArray size e
   let a1 := Array.set! a0 position player
   let a2 := Array.set! a1 goal goalc
-  dbg_trace position
-  dbg_trace p
+  -- 005new:
+  -- dbg_trace position
+  -- dbg_trace p
   dbg_trace g
   dbg_trace s
   `(┤$a2:game_cell*├)
@@ -162,6 +172,11 @@ by apply step_left
 
 -- 004new:
 example : can_win {position := 9, goal := 11, size := 15} :=
-by apply step_right
-   apply step_right
-   exact done
+by
+  -- 005new:
+  -- apply step_right
+  apply step_left
+  apply step_right
+  apply step_right
+  apply step_right
+  exact done
