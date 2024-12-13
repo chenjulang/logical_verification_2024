@@ -1,11 +1,11 @@
 import Lean
 
-/-- 第0步：游戏状态 -/
+/-- 001new：游戏状态 -/
 structure GameState where
   position : Nat
   goal : Nat
 
--- 第1步：游戏里的格子放的什么 [start
+-- 001new：游戏里的格子放的什么 [start
 
 inductive CellContents where
   | empty  : CellContents
@@ -26,12 +26,15 @@ List CellContents → GameState
  | CellContents.goal::cells =>
   let ⟨p,g⟩ := game_state_from_cells cells
   ⟨p+1, 0⟩
+
 #reduce game_state_from_cells [CellContents.goal, CellContents.player, CellContents.empty, CellContents.empty] -- 打印：{ position := 1, goal := 0 }
+-- #eval game_state_from_cells [CellContents.goal, CellContents.player, CellContents.empty, CellContents.empty] -- 打印：{ position := 1, goal := 0 }
+
 
 -- 游戏里的格子放的什么 end]
 
 
--- 第2步：syntax语法 [start
+-- 001new：syntax语法 [start
 
 declare_syntax_cat game_cell
 declare_syntax_cat game_cell_sequence

@@ -85,8 +85,8 @@ macro_rules
   -- how to get an integer from p?
   let g ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.delab
   let y ← `(game_cell| ░)
-  let x ← Array.mkArray g.isNatLit?.get! y
-
+  -- let x ← Array.mkArray g.isNatLit?.get! y
+  let x ← Array.mkArray g.raw.isNatLit?.get! y  -- 不能正常运行
   dbg_trace p
   `(┤$x:game_cell*├) -- TODO
 
