@@ -379,22 +379,25 @@ def escape_south
   {w: List Coords} :
   can_win ⟨⟨sx, y+1⟩,⟨x, y⟩,w⟩ := sorry
 
-macro "west" : tactic => `(tactic |first |  apply step_left | fail "cannot step west")
+-- 018new:
+-- 原来2个rfl是将图形附带的代码证明，直接按照定义清除掉。
+macro "west" : tactic => `(tactic |first |  apply step_left;rfl;rfl | fail "cannot step west")
   -- `(apply step_left ; rfl; rfl)
-macro "east" : tactic => `(tactic |apply step_right)
-macro "north" : tactic => `(tactic |apply step_up)
-macro "south" : tactic => `(tactic |apply step_down)
+macro "east" : tactic => `(tactic |first|apply step_right;rfl;rfl | fail "cannot step east")
+macro "north" : tactic => `(tactic |first|apply step_up;rfl;rfl | fail "cannot step north")
+macro "south" : tactic => `(tactic |first|apply step_down;rfl;rfl | fail "cannot step south")
 
 -- example : can_win maze2 := by
 --  apply step_left  -- 这里角色开始可以移动了，但是初始位置好像没事显示啊？
 --  admit
 
+-- 018new:
 example : can_win maze2 := by
   west
   south -- 这里走不了，可能是4个step_XXXX定理写错了哪个坐标+1
-  -- south
-  -- east
-  -- east
-  -- east
-  -- south
-  -- apply escape_south
+  south
+  east
+  east
+  east
+  south
+  apply escape_south  -- 第一次走出了迷宫！！但是还有很多证明没完成，这样倒着证明好吗？
