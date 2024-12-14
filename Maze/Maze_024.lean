@@ -12,7 +12,6 @@ set_option linter.unusedVariables false
 a maze looks like:
 ╔═══════╗
 ║▓▓▓▓▓▓▓║
--- 007new:
 ║▓░▓@▓░▓║
 ║▓░▓░░░▓║
 ║▓░░▓░▓▓║
@@ -160,10 +159,10 @@ def make_move : GameState → Move → GameState
              else ⟨s, ⟨x, y+1⟩, w⟩
 
 
-def is_win : GameState → Bool
+-- 024new:
+def is_win : GameState → Prop
 -- | ⟨⟨sx, sy⟩, ⟨x,y⟩, w⟩ => x == 0 ∨ y == 0 ∨ x + 1 == sx ∨ y + 1 == sy
--- 022new:
-| ⟨⟨sx, sy⟩, ⟨x,y⟩, w⟩ => x == 0 || y == 0 || x + 1 == sx || y + 1 == sy
+| ⟨⟨sx, sy⟩, ⟨x,y⟩, w⟩ => x = 0 ∨ y = 0 ∨ x + 1 = sx ∨ y + 1 = sy
 
 -- def ends_with_win : List GameState → Bool
 -- | [] => false
@@ -276,28 +275,56 @@ def escape_west
   -- 022new:
   can_win ⟨⟨sx, sy⟩,⟨0, y⟩,w⟩ :=
   ⟨[],
-      -- have h : List.foldl make_move { size := s, position := { x := 0, y := y }, walls := w } [] =
-      --           { size := s, position := { x := 0, y := y }, walls := w } := rfl
-      -- 022new:
     by
       have h : List.foldl make_move { size := ⟨sx, sy⟩, position := { x := 0, y := y }, walls := w } [] =
           { size := ⟨sx,sy⟩, position := { x := 0, y := y }, walls := w } := rfl
       rw [h]
       have h' : is_win { size := ⟨sx, sy⟩, position := { x := 0, y := y }, walls := w } =
-                  (0 == 0 || y == 0 || 0 + 1 == sx || y + 1 == sy) := by rfl
+                  -- 024new:
+                  (0 = 0 ∨ y = 0 ∨ 0 + 1 = sx ∨ y + 1 = sy) := by rfl
       rw [h']
-      rfl
+      -- 023new:
+      simp only [beq_self_eq_true, beq_iff_eq, zero_add, true_or]
   ⟩
 
 def escape_east
   {sy x y : Nat}
   {w: List Coords} :
-  can_win ⟨⟨x+1, sy⟩,⟨x, y⟩,w⟩ := sorry
+  -- can_win ⟨⟨x+1, sy⟩,⟨x, y⟩,w⟩ := sorry
+  can_win ⟨⟨x+1, sy⟩,⟨x, y⟩,w⟩ :=
+  ⟨[],
+    by
+      have h : List.foldl make_move { size := { x := x + 1, y := sy }, position := { x := x, y := y }, walls := w } [] =
+          { size := { x := x + 1, y := sy }, position := { x := x, y := y }, walls := w } := rfl
+      rw [h]
+      exact Or.inr $ Or.inr $ Or.inl rfl
+  ⟩
+
 def escape_north
-  {s : Coords}
+  -- {s : Coords}
+  -- 023new:
+  {sx sy : Nat}
   {x : Nat}
   {w: List Coords} :
-  can_win ⟨s,⟨x, 0⟩,w⟩ := sorry
+  -- can_win ⟨s,⟨x, 0⟩,w⟩ := sorry
+  -- 023new:
+  can_win ⟨⟨sx, sy⟩,⟨x, 0⟩,w⟩ :=
+  ⟨[],
+    by
+      have h : List.foldl make_move { size := ⟨sx, sy⟩, position := { x := x, y := 0 }, walls := w } [] =
+                { size := ⟨sx,sy⟩, position := { x := x, y := 0 }, walls := w } := rfl
+      rw [h]
+      have h' : is_win { size := ⟨sx, sy⟩, position := { x := x, y := 0 }, walls := w } =
+                -- (x == 0 ∨ 0 == 0 ∨ x + 1 == sx ∨ 0 + 1 == sy) := by rfl
+                (x = 0 ∨ 0 = 0 ∨ x + 1 = sx ∨ 0 + 1 = sy) := by rfl
+      rw [h']
+      -- have h0 : 0 == 0 := rfl
+      -- exact Or.inr $ Or.inl h0
+      simp only [beq_iff_eq, beq_self_eq_true, zero_add, true_or, or_true]
+  ⟩
+  -- 024new:
+  -- 本来是要这样替换的，但是有问题，先不改了，保持上面能用的证明。
+  -- ⟨[], Or.inr (Or.inr (Or.inr rfl))⟩
 
 def escape_south
   {sx x y : Nat}
@@ -311,9 +338,10 @@ def escape_south
     { size := { x := sx, y := y + 1 }, position := { x := x, y := y }, walls := w } := by rfl
     rw [h]
     have h' : is_win { size := { x := sx, y := y + 1 }, position := { x := x, y := y }, walls := w } =
-                    (x == 0 || y == 0 || x + 1 == sx || y + 1 == y + 1) := rfl
+                -- 024new:
+                    (x = 0 ∨ y = 0 ∨ x + 1 = sx ∨ y + 1 = y + 1) := rfl
     rw [h']
-    admit
+    simp only [beq_iff_eq, beq_self_eq_true, or_true]
   ⟩
 
 macro "west" : tactic => `(tactic |first |  apply step_left;rfl;rfl | fail "cannot step west")
