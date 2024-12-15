@@ -50,8 +50,12 @@ syntax:max game_top_row game_row* game_bottom_row : term
 
 -- 025new:
 -- helper syntax for intermediate parser values
-syntax "╣{" game_row* "}╠" : term
-syntax "╣" game_cell* "╠" : term
+-- syntax "╣{" game_row* "}╠" : term
+-- syntax "╣" game_cell* "╠" : term
+-- 036new:
+syntax "╣{" game_row* "}╠" : term -- list of list of game cells
+syntax "╣" game_cell* "╠"  : term -- list of game cells
+syntax "┤" game_cell "├"   : term -- single game cell
 -- x is column number
 -- y is row number
 -- upper left is ⟨0,0⟩
@@ -83,14 +87,15 @@ inductive CellContents where
 def update_state_with_row_aux : Nat → Nat → List CellContents → GameState → GameState
 | currentRowNum, currentColNum, [], oldState => oldState
 | currentRowNum, currentColNum, cell::contents, oldState =>
-             let oldState' := update_state_with_row_aux currentRowNum (currentColNum+1) contents oldState
-             match cell with
-             | CellContents.empty => oldState'
-            --  034new:
-             | CellContents.wall => {oldState' .. with
-                                      walls := ⟨currentColNum,currentRowNum⟩::oldState'.walls}
-             | CellContents.player => {oldState' .. with
-                                       position := ⟨currentColNum,currentRowNum⟩}
+-- 035new:
+    let oldState' := update_state_with_row_aux currentRowNum (currentColNum+1) contents oldState
+    match cell with
+    | CellContents.empty => oldState'
+    | CellContents.wall => {oldState' .. with
+                            walls := ⟨currentColNum,currentRowNum⟩::oldState'.walls}
+    | CellContents.player => {oldState' .. with
+                              position := ⟨currentColNum,currentRowNum⟩}
+
 
 def update_state_with_row : Nat → List CellContents → GameState → GameState
 | currentRowNum, rowContents, oldState => update_state_with_row_aux currentRowNum 0 rowContents oldState
@@ -107,12 +112,20 @@ def game_state_from_cells_aux : Coords → Nat → List (List CellContents) → 
 def game_state_from_cells : Coords → List (List CellContents) → GameState
 | size, cells => game_state_from_cells_aux size 0 cells
 
+-- 036new:
+macro_rules
+| `(┤░├) => `(CellContents.empty)
+| `(┤▓├) => `(CellContents.wall)
+| `(┤@├) => `(CellContents.player)
+
 
 macro_rules
 | `(╣╠) => `(([] : List CellContents))
-| `(╣░ $cells:game_cell*╠) => `(CellContents.empty :: ╣$cells:game_cell*╠)
-| `(╣▓ $cells:game_cell*╠) => `(CellContents.wall :: ╣$cells:game_cell*╠)
-| `(╣@ $cells:game_cell*╠) => `(CellContents.player :: ╣$cells:game_cell*╠)
+-- | `(╣░ $cells:game_cell*╠) => `(CellContents.empty :: ╣$cells:game_cell*╠)
+-- | `(╣▓ $cells:game_cell*╠) => `(CellContents.wall :: ╣$cells:game_cell*╠)
+-- | `(╣@ $cells:game_cell*╠) => `(CellContents.player :: ╣$cells:game_cell*╠)
+| `(╣$cell:game_cell $cells:game_cell*╠) => `(┤$cell:game_cell├:: ╣$cells:game_cell*╠)
+
 macro_rules
 | `(╣{}╠) => `(([] : List (List CellContents)))
 | `(╣{ ║$cells:game_cell*║  $rows:game_row*}╠) => `(╣$cells:game_cell*╠ :: ╣{$rows:game_row*}╠)

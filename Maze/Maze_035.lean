@@ -83,14 +83,15 @@ inductive CellContents where
 def update_state_with_row_aux : Nat → Nat → List CellContents → GameState → GameState
 | currentRowNum, currentColNum, [], oldState => oldState
 | currentRowNum, currentColNum, cell::contents, oldState =>
-             let oldState' := update_state_with_row_aux currentRowNum (currentColNum+1) contents oldState
-             match cell with
-             | CellContents.empty => oldState'
-            --  034new:
-             | CellContents.wall => {oldState' .. with
-                                      walls := ⟨currentColNum,currentRowNum⟩::oldState'.walls}
-             | CellContents.player => {oldState' .. with
-                                       position := ⟨currentColNum,currentRowNum⟩}
+-- 035new:
+    let oldState' := update_state_with_row_aux currentRowNum (currentColNum+1) contents oldState
+    match cell with
+    | CellContents.empty => oldState'
+    | CellContents.wall => {oldState' .. with
+                            walls := ⟨currentColNum,currentRowNum⟩::oldState'.walls}
+    | CellContents.player => {oldState' .. with
+                              position := ⟨currentColNum,currentRowNum⟩}
+
 
 def update_state_with_row : Nat → List CellContents → GameState → GameState
 | currentRowNum, rowContents, oldState => update_state_with_row_aux currentRowNum 0 rowContents oldState

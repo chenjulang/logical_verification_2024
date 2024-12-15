@@ -29,29 +29,34 @@ declare_syntax_cat horizontal_border
 declare_syntax_cat game_top_row
 declare_syntax_cat game_bottom_row
 
--- 007new:
-syntax "═" : horizontal_border
+-- 040new:
+syntax "─" : horizontal_border
 
--- 009new:
-syntax "\n╔" horizontal_border* "╗\n" : game_top_row
+-- 040new:
+syntax "\n╭" horizontal_border* "╮\n" : game_top_row
 
-syntax "╚" horizontal_border* "╝\n" : game_bottom_row
+-- 040new:
+syntax "╰" horizontal_border* "╯\n" : game_bottom_row
 
 -- 027new:
 syntax "░" : game_cell -- empty
 syntax "▓" : game_cell -- wall
 syntax "@" : game_cell -- player
 
--- syntax game_cell'* : game_c -- 这里打错了吗？不能运行
--- 007new:
-syntax "║" game_cell* "║\n" : game_row
+-- 040new:
+syntax "│" game_cell* "│\n" : game_row
+
 -- 030new:
 syntax:max game_top_row game_row* game_bottom_row : term
 
 -- 025new:
 -- helper syntax for intermediate parser values
-syntax "╣{" game_row* "}╠" : term
-syntax "╣" game_cell* "╠" : term
+-- syntax "╣{" game_row* "}╠" : term
+-- syntax "╣" game_cell* "╠" : term
+-- 036new:
+syntax "╣{" game_row* "}╠" : term -- list of list of game cells
+syntax "╣" game_cell* "╠"  : term -- list of game cells
+syntax "┤" game_cell "├"   : term -- single game cell
 -- x is column number
 -- y is row number
 -- upper left is ⟨0,0⟩
@@ -83,14 +88,15 @@ inductive CellContents where
 def update_state_with_row_aux : Nat → Nat → List CellContents → GameState → GameState
 | currentRowNum, currentColNum, [], oldState => oldState
 | currentRowNum, currentColNum, cell::contents, oldState =>
-             let oldState' := update_state_with_row_aux currentRowNum (currentColNum+1) contents oldState
-             match cell with
-             | CellContents.empty => oldState'
-            --  034new:
-             | CellContents.wall => {oldState' .. with
-                                      walls := ⟨currentColNum,currentRowNum⟩::oldState'.walls}
-             | CellContents.player => {oldState' .. with
-                                       position := ⟨currentColNum,currentRowNum⟩}
+-- 035new:
+    let oldState' := update_state_with_row_aux currentRowNum (currentColNum+1) contents oldState
+    match cell with
+    | CellContents.empty => oldState'
+    | CellContents.wall => {oldState' .. with
+                            walls := ⟨currentColNum,currentRowNum⟩::oldState'.walls}
+    | CellContents.player => {oldState' .. with
+                              position := ⟨currentColNum,currentRowNum⟩}
+
 
 def update_state_with_row : Nat → List CellContents → GameState → GameState
 | currentRowNum, rowContents, oldState => update_state_with_row_aux currentRowNum 0 rowContents oldState
@@ -107,22 +113,31 @@ def game_state_from_cells_aux : Coords → Nat → List (List CellContents) → 
 def game_state_from_cells : Coords → List (List CellContents) → GameState
 | size, cells => game_state_from_cells_aux size 0 cells
 
+-- 036new:
+macro_rules
+| `(┤░├) => `(CellContents.empty)
+| `(┤▓├) => `(CellContents.wall)
+| `(┤@├) => `(CellContents.player)
+
 
 macro_rules
 | `(╣╠) => `(([] : List CellContents))
-| `(╣░ $cells:game_cell*╠) => `(CellContents.empty :: ╣$cells:game_cell*╠)
-| `(╣▓ $cells:game_cell*╠) => `(CellContents.wall :: ╣$cells:game_cell*╠)
-| `(╣@ $cells:game_cell*╠) => `(CellContents.player :: ╣$cells:game_cell*╠)
+-- | `(╣░ $cells:game_cell*╠) => `(CellContents.empty :: ╣$cells:game_cell*╠)
+-- | `(╣▓ $cells:game_cell*╠) => `(CellContents.wall :: ╣$cells:game_cell*╠)
+-- | `(╣@ $cells:game_cell*╠) => `(CellContents.player :: ╣$cells:game_cell*╠)
+| `(╣$cell:game_cell $cells:game_cell*╠) => `(┤$cell:game_cell├:: ╣$cells:game_cell*╠)
+
 macro_rules
 | `(╣{}╠) => `(([] : List (List CellContents)))
 | `(╣{ ║$cells:game_cell*║  $rows:game_row*}╠) => `(╣$cells:game_cell*╠ :: ╣{$rows:game_row*}╠)
 
 
--- 007new:
+-- 040new:
 macro_rules
-| `(╔ $tb:horizontal_border* ╗
+-- | `(╔ $tb:horizontal_border* ╗
+| `(╭ $tb:horizontal_border* ╮
     $rows:game_row*                   -- 它这里怎么知道是识别若干行的呢？
-    ╚ $bb:horizontal_border* ╝) =>
+    ╰ $bb:horizontal_border* ╯) =>
 -- 009new:
     let rsize := Lean.Syntax.mkNumLit (toString rows.size) -- there's gotta be a better way to do this
     let csize := Lean.Syntax.mkNumLit (toString tb.size) -- there's gotta be a better way to do this
@@ -496,26 +511,31 @@ def delabGameRow : Array (Lean.TSyntax `game_cell) → Lean.PrettyPrinter.Delabo
 | a => `(game_row| ║  $a:game_cell* ║ ) -- 这样子就不报错了？
 
 
--- 034new:
+-- 040new:
 def delabGameState : Lean.Expr → Lean.PrettyPrinter.Delaborator.Delab
 | e =>
   do guard $ e.getAppNumArgs == 3
      let ⟨⟨numCols, numRows⟩, playerCoords, walls⟩ ← extractGameState e
-     let topBarCell ← `(horizontal_border| ═)
+    --  let topBarCell ← `(horizontal_border| ═)
+     let topBarCell ← `(horizontal_border| ─)
      let topBar := Array.mkArray numCols topBarCell
      let playerCell ← `(game_cell| @)
      let emptyCell ← `(game_cell| ░)
      let wallCell ← `(game_cell| ▓)
      let emptyRow := Array.mkArray numCols emptyCell
-     let emptyRowStx ← `(game_row|║$emptyRow:game_cell*║)
+     let emptyRowStx ← `(game_row| │$emptyRow:game_cell*│)
      let allRows := Array.mkArray numRows emptyRowStx
      let a0 := Array.mkArray numRows $ Array.mkArray numCols emptyCell
      let a1 := update2dArray a0 playerCoords playerCell
      let a2 := update2dArrayMulti a1 walls wallCell
      let aa ← Array.mapM delabGameRow a2
-     `(╔$topBar:horizontal_border*╗
+     `(╭$topBar:horizontal_border*╮
        $aa:game_row*
-       ╚$topBar:horizontal_border*╝)
+       ╰$topBar:horizontal_border*╯)
+    --  `(╔$topBar:horizontal_border*╗
+    --    $aa:game_row*
+    --    ╚$topBar:horizontal_border*╝)
+
 
 -- 034new:
 @[delab app.GameState.mk] def delabGameStateMk : Lean.PrettyPrinter.Delaborator.Delab := do
