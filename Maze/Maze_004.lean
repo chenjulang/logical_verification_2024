@@ -65,7 +65,7 @@ macro_rules
 macro_rules
 | `(┤$cells:game_cell*├) => `(game_state_from_cells  ┤{$cells:game_cell*}├ )
 
--- #reduce ┤░@░★░░├
+#reduce ┤░@░★░░├
 
 -- #check GameState.mk
 
@@ -77,10 +77,14 @@ macro_rules
   -- | _              => throw ()
 
 -- 003new:
+/-- 这个是为了打印好看吗？对的，就是为了在infoview显示它自己，而不是GameState
+    因为图形通过game_state_from_cells被变成了GameState。
+    虽然语法不太看懂
+-/
 @[delab app.GameState.mk] def delabGameState : Lean.PrettyPrinter.Delaborator.Delab := do
   let e ← Lean.PrettyPrinter.Delaborator.SubExpr.getExpr
   -- 004new: delabGameState这个终于正常运行了
-  guard $ e.getAppNumArgs == 3
+  guard $ e.getAppNumArgs == 3 -- 这一行做了什么？参数
   let p ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
            $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
            $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.delab
@@ -102,7 +106,7 @@ macro_rules
   dbg_trace s
   `(┤$a2:game_cell*├)
 
--- #reduce ┤░@░★░░├
+#reduce ┤░@░★░░├
 
 
 
@@ -116,10 +120,12 @@ macro_rules
 -- syntax语法 end]
 
 
-
 def allowed_move : GameState → GameState → Prop
 -- 004new:
-| ⟨n, g, s⟩, ⟨m, h, t⟩ => (m + 1 = n ∧ g = h) ∨ (m = n + 1 ∧ g = h)
+| ⟨s1, p1, w1⟩, ⟨s2, p2, w2⟩ =>
+    (s2 + 1 = s1 ∧ p1 = p2) -- 这是在干嘛？
+    ∨
+    (s2 = s1 + 1 ∧ p1 = p2)
 
 
 def is_win : GameState → Prop
@@ -162,6 +168,6 @@ by apply step_left
 
 -- 004new:
 example : can_win {position := 9, goal := 11, size := 15} :=
-by apply step_right
-   apply step_right
+by apply step_right;simp
+   apply step_right;simp
    exact done

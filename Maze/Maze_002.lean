@@ -50,13 +50,13 @@ macro_rules
 -- 002new：
 | `(┤{}├) => `(([] : List CellContents))
 | `(┤{░ $cells:game_cell* }├) => `( CellContents.empty :: ┤{$cells:game_cell*}├)
+-- 这里很神奇，┤{$cells:game_cell*}├ 里面，变量cells先被替换；然后被看成人类写的代码，机器人重新解释。
 | `(┤{★ $cells:game_cell* }├) => `( CellContents.goal :: ┤{$cells:game_cell*}├)
 | `(┤{@ $cells:game_cell* }├) => `( CellContents.player :: ┤{$cells:game_cell*}├)
 
--- | `(┤├) => `( (⟨1, 3⟩ : GameState) )
--- | `(┤$cell:game_cell $cells:game_cell*├) => `( (⟨123, 999⟩ : GameState) )
 
 -- 002new：
+-- 这里是不是重复了呢？
 macro_rules
 | `(┤$cells:game_cell*├) => `(game_state_from_cells  ┤{$cells:game_cell*}├ )
 
