@@ -1,3 +1,5 @@
+一键打开：https://gitpod.io/new/#https://github.com/chenjulang/logical_verification_2024
+
 # Logical Verification 2024
 
 videos:
