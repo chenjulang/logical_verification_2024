@@ -100,6 +100,8 @@ def can_win (g : GameState) : Prop := -- 这么复杂的描述吗？
 
 theorem done {n : Nat} : can_win ⟨n,n⟩ := sorry
 
+-- 位置A可以走出迷宫的前提下，如果有一个位置在位置A右边1格。
+-- 因为是反向推理用，所以实际上目标会“往左走”
 theorem step_left {p g : Nat} (h : can_win ⟨p, g⟩) : can_win ⟨p + 1, g⟩ :=
   let n := p + 1
   ⟨n,
