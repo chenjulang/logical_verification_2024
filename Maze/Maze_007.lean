@@ -255,6 +255,7 @@ inductive CellContents where
 -- 007new:
 -- 它这里怎么知道是识别若干行的呢？
 -- 原来是因为这里的换行符号：syntax "║" game_cell* "║\n" : game_row
+-- test
 macro_rules
 | `(╔ $tb:horizontal_border* ╗
     $rows:game_row*
