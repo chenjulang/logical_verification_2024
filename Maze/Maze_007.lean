@@ -201,7 +201,6 @@ end OneDimension
 a maze looks like:
 ╔═══════╗
 ║▓▓▓▓▓▓▓║
--- 007new:
 ║▓░▓@▓░▓║
 ║▓░▓░░░▓║
 ║▓░░▓░▓▓║
@@ -215,6 +214,7 @@ declare_syntax_cat game_cell
 declare_syntax_cat game_cell_sequence
 declare_syntax_cat game_row
 -- 007new:
+-- 这三个应该都是迷宫的墙，而且只表示第一层和最后一层的围墙：
 declare_syntax_cat horizontal_border
 declare_syntax_cat game_top_row
 declare_syntax_cat game_bottom_row
@@ -231,7 +231,6 @@ syntax "░" : game_cell
 syntax "▓" : game_cell
 syntax "@" : game_cell
 
--- syntax game_cell'* : game_c -- 这里打错了吗？不能运行
 -- 007new:
 syntax "║" game_cell* "║\n" : game_row
 syntax game_top_row game_row* game_bottom_row : term
@@ -254,11 +253,14 @@ inductive CellContents where
 
 
 -- 007new:
+-- 它这里怎么知道是识别若干行的呢？
+-- 原来是因为这里的换行符号：syntax "║" game_cell* "║\n" : game_row
 macro_rules
 | `(╔ $tb:horizontal_border* ╗
-    $rows:game_row*                   -- 它这里怎么知道是识别若干行的呢？
-    ╚ $bb:horizontal_border* ╝) =>
-      `( 0 )
+    $rows:game_row*
+    ╚ $bb:horizontal_border* ╝)
+    =>
+    `( 0 )
 #reduce ╔═══════╗
         ║▓▓▓▓▓▓▓║
         ║▓░▓@▓░▓║

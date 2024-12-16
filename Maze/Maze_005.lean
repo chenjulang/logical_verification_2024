@@ -94,9 +94,9 @@ macro_rules
   let goalc ← `(game_cell| ★)
   -- 005new:
   -- let position : Nat := p.raw.isNatLit?.get!
-    let pexpr:Lean.Expr ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
-           $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
-           $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.SubExpr.getExpr
+  let pexpr:Lean.Expr ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
+          $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
+          $ Lean.PrettyPrinter.Delaborator.SubExpr.withAppArg Lean.PrettyPrinter.Delaborator.SubExpr.getExpr
   dbg_trace pexpr
   let position' ← (Lean.Meta.whnf pexpr)
   let position : Nat := (Lean.Expr.natLit? position').get!
