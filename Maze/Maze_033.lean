@@ -400,7 +400,7 @@ macro "out" : tactic => `(tactic| first | apply escape_north | apply escape_sout
                            fail "not currently at maze boundary")
 
 -- 033new:
--- 没看懂这种写法，先不用：
+-- 没看懂这种写法来改写out，先不用：
 -- -- Define an "or" tactic combinator, like <|> in Lean 3.
 -- syntax (name := orTactic) tactic " ⟨|⟩ " tactic : tactic
 -- @[tactic orTactic]
