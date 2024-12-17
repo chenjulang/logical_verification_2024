@@ -56,7 +56,7 @@ structure Coords where
   x : Nat
   y : Nat
 -- 016new:
-deriving BEq
+deriving BEq -- 没有这一行后面 (w.contains ⟨x',y'⟩ = false) 会报错
 
 -- 015new:
 instance : ToString Coords where
@@ -193,12 +193,12 @@ def delabGameRow : Array (Lean.TSyntax `game_cell) → Lean.PrettyPrinter.Delabo
 | a => `(game_row| ║  $a:game_cell* ║ ) -- 这样子就不报错了？
 
 
-
+/-- 应该就是这次迭代开始可以把迷宫读取到infoview -/
 @[delab app.GameState.mk] def delabGameState : Lean.PrettyPrinter.Delaborator.Delab := do
   let e ← Lean.PrettyPrinter.Delaborator.SubExpr.getExpr
   -- 016new:
   let e' ← (Lean.Meta.whnf e)
-  guard $ e'.getAppNumArgs == 3
+  guard $ e'.getAppNumArgs == 3 --这是在干嘛呢？
 -- 014new:
     -- let pexpr:Lean.Expr ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
   let sizeExpr:Lean.Expr ← Lean.PrettyPrinter.Delaborator.SubExpr.withAppFn
@@ -276,6 +276,7 @@ def allowed_move : GameState → GameState → Prop
       (w.contains ⟨x',y'⟩ = false) ∧ -- not allowed to enter wall
       ((x = x' ∧ (y = y' + 1 ∨ y + 1 = y')) ∨
        (y = y' ∧ (x = x' + 1 ∨ x + 1 = x')))
+
 def is_win : GameState → Prop
 | ⟨⟨sx, sy⟩, ⟨x,y⟩, w⟩ => x = 0 ∨ y = 0 ∨ x + 1 = sx ∨ y + 1 = sy
 def can_win (g : GameState) : Prop :=
@@ -298,6 +299,6 @@ theorem step_left {s p: Coords} {w: List Coords} (h : can_win ⟨s,p,w⟩) : can
    by admit,
    λ i h => by admit⟩
 #reduce maze1
--- example : can_win maze2 := by sorry
+-- example : can_win maze2 := by
 --  apply step_left
 --  admit

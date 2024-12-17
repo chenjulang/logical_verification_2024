@@ -133,8 +133,9 @@ def allowed_move : GameState → GameState → Bool
       w == w' ∧                -- walls are static
       s == s' ∧                -- size is static
       w.notElem ⟨x', y'⟩ ∧ -- not allowed to enter wall
-      ((x == x' ∧ (y == y' + 1 ∨ y + 1 == y')) ||
-       (y == y' ∧ (x == x' + 1 ∨ x + 1 == x')))
+      ((x == x' ∧ (y == y' + 1 ∨ y + 1 == y')) || -- 上下走
+       (y == y' ∧ (x == x' + 1 ∨ x + 1 == x'))) -- 左右走
+       
 def is_win : GameState → Bool
 | ⟨⟨sx, sy⟩, ⟨x,y⟩, w⟩ => x == 0 ∨ y == 0 ∨ x + 1 == sx ∨ y + 1 == sy
 def ends_with_win : List GameState → Bool

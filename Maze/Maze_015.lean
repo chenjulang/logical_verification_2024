@@ -134,6 +134,7 @@ macro_rules
         ╚═══════╝
 
 -- 015new:
+-- 这个函数感觉可以去掉，没有实际的作用。
 def extractXY : Lean.Expr → Lean.PrettyPrinter.Delaborator.DelabM Coords
 | e => do
   let e':Lean.Expr ← (Lean.Meta.whnf e)
@@ -149,6 +150,7 @@ def extractXY : Lean.Expr → Lean.PrettyPrinter.Delaborator.DelabM Coords
 
 
 -- 015new:
+-- 这个函数感觉可以去掉，没有实际的作用。
 def extractWallList : Nat -> Lean.Expr → Lean.PrettyPrinter.Delaborator.DelabM (List Coords)
 | 0, _ => do return [] -- recursion deptch reached. -- 这里报错了咋办？
 | (depth+1), exp => do
