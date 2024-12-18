@@ -1,0 +1,1 @@
+{"version":2,"references":{"c:Lean.Widget.Module.javascript":{"usages":[[6,2,6,12,"ChessPositionWidget",5,0,85,1,5,4,5,23]],"definition":null},"c:Lean.Widget.Module":{"usages":[[5,26,5,44,"ChessPositionWidget",5,0,85,1,5,4,5,23]],"definition":null},"c:ChessPositionWidget":{"usages":[[86,8,86,27]],"definition":[5,4,5,23]}},"module":"ChessWidget"}
