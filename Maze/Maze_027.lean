@@ -197,6 +197,7 @@ def can_escape (state : GameState) : Prop :=
 
 -- theorem can_still_win (g : GameState) (m : Move) (hg : can_win (make_move g m)) : can_win g :=
 -- 027new:
+-- 移动以后还是能走到出口
 theorem can_still_escape (g : GameState) (m : Move) (hg : can_escape (make_move g m)) : can_escape g :=
  have ⟨pms, hpms⟩ := hg
  Exists.intro

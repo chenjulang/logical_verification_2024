@@ -70,17 +70,21 @@ inductive CellContents where
 
 -- 013new:
 def update_state_with_row_aux : Nat → Nat → List CellContents → GameState → GameState
-| currentRowNum, currentColNum, [], oldState => oldState
+| currentRowNum, currentColNum, [], oldState =>
+  oldState
 | currentRowNum, currentColNum, cell::contents, oldState =>
-             let oldState' := update_state_with_row_aux currentRowNum (currentColNum+1) contents oldState
-             match cell with
-             | CellContents.empty => oldState'
-             | CellContents.wall => {size     := oldState'.size,
-                                     position := oldState'.position,
-                                     walls    := ⟨currentColNum,currentRowNum⟩::oldState'.walls}
-             | CellContents.player => {size     := oldState'.size,
-                                       position := ⟨currentColNum,currentRowNum⟩,
-                                       walls    := oldState'.walls}
+  let oldState' := update_state_with_row_aux currentRowNum (currentColNum+1) contents oldState
+  match cell with
+  | CellContents.empty => oldState'
+  | CellContents.wall => {size     := oldState'.size,
+                          position := oldState'.position,
+                          walls    := ⟨currentColNum,currentRowNum⟩::oldState'.walls}
+  | CellContents.player => {size     := oldState'.size,
+                            position := ⟨currentColNum,currentRowNum⟩,
+                            walls    := oldState'.walls}
+
+
+
 def update_state_with_row : Nat → List CellContents → GameState → GameState
 | currentRowNum, rowContents, oldState => update_state_with_row_aux currentRowNum 0 rowContents oldState
 -- size, current row, remaining cells -> gamestatem
@@ -119,7 +123,7 @@ macro_rules
 
 -- 013new:
 -- #check Array.size
-#reduce ╔═══════╗ -- 终于可以数清楚迷宫的面积，但是位置是不是不对呢？
+#reduce ╔═══════╗ -- 终于可以数清楚迷宫的面积，但是位置是不是不对呢？对的，应该是不算围墙
         ║▓▓▓▓▓▓▓║
         ║▓░▓@▓░▓║
         ║▓░▓░░░▓║

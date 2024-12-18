@@ -53,7 +53,7 @@ syntax:max game_top_row game_row* game_bottom_row : term
 -- syntax "╣{" game_row* "}╠" : term
 -- syntax "╣" game_cell* "╠" : term
 -- 036new:
-syntax "╣{" game_row* "}╠" : term -- list of list of game cells
+syntax "╣{" game_row* "}╠" : term -- 套娃： list of list of game cells
 syntax "╣" game_cell* "╠"  : term -- list of game cells
 syntax "┤" game_cell "├"   : term -- single game cell
 -- x is column number
