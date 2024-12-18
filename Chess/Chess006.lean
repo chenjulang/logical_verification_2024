@@ -867,3 +867,326 @@ inductive ForcedWin : Side → Position → Prop where
 def make_move (pos : Position) (cm : ChessMove) : Option Position :=
   let mvs := valid_moves pos
   (mvs.find? (·.fst = cm)).map (·.snd)
+
+
+-- 006new:
+-- 有兴趣的是：绝杀的定义。对手仅存的棋路的定义。
+
+
+
+section tactics
+
+open Lean.Meta Lean.Elab.Tactic
+
+syntax "move " term : tactic
+
+elab_rules : tactic | `(tactic| move $t:term) => withMainContext do
+  let g ← getMainGoal
+  let goal_type ← whnfR (← g.getType)
+  let .app (.app (.const ``ForcedWin _) side) pos := goal_type
+    | throwError "'move' tactic expects ForcedWin goal"
+  -- TODO throw error if side does not equal pos.turn
+  let t ← Lean.Elab.Term.elabTerm t none
+  let cm ← whnf (← mkAppM ``ChessMove.ofString #[t])
+  let .app (.app (.const ``Option.some _) _) cm := cm
+    | throwError "failed to parse move"
+
+  let pos1 ← whnf (← mkAppM ``make_move #[pos, cm])
+  let .app (.app (.const ``Option.some _) _) pos1 := pos1
+    | throwError "failed to make move"
+  let pos1 ← whnf pos1
+
+  let pos_stx ← Lean.Elab.Term.exprToSyntax pos
+  let mv_stx ← Lean.Elab.Term.exprToSyntax cm
+  let pos1_stx ← Lean.Elab.Term.exprToSyntax pos1
+  evalTactic (← `(tactic| refine ForcedWin.Self $pos_stx $mv_stx $pos1_stx (by decide) ?_))
+  evalTactic (← `(tactic| dsimp [game_start, Side.other, Position.set]))
+
+syntax "opponent_move" : tactic
+
+elab_rules : tactic | `(tactic| opponent_move) => withMainContext do
+  let g ← getMainGoal
+  let goal_type ← whnfR (← g.getType)
+  let .app (.app (.const ``ForcedWin _) side) pos := goal_type
+    | throwError "'opponent_move' tactic expects ForcedWin goal"
+  -- TODO throw error if side does not equal pos.turn.other
+
+  let pos_stx ← Lean.Elab.Term.exprToSyntax pos
+  evalTactic (← `(tactic| apply ForcedWin.Opponent $pos_stx))
+  evalTactic (← `(tactic| rw [←List.forall_iff_forall_mem]))
+  evalTactic (← `(tactic| dsimp [do_simple_move, Side.other, Position.set]))
+  evalTactic (← `(tactic| try constructorm* (_ ∧ _)))
+  for g in (←get).goals do
+    g.setUserName .anonymous
+
+syntax "checkmate" : tactic
+
+elab_rules : tactic | `(tactic| checkmate) => withMainContext do
+  let g ← getMainGoal
+  let goal_type ← whnfR (← g.getType)
+  let .app (.app (.const ``ForcedWin _) side) pos := goal_type
+    | throwError "'checkmate' tactic expects ForcedWin goal"
+  -- TODO throw error if side does not equal pos.turn.other
+
+  let pos_stx ← Lean.Elab.Term.exprToSyntax pos
+  evalTactic (← `(tactic| exact ForcedWin.Checkmate $pos_stx (by decide)))
+
+end tactics
+
+
+
+
+theorem black_wins_back_rank :
+    ForcedWin .black
+      ╔════════════════╗
+      ║░░▓▓░░▓▓♜]▓▓♚}▓▓║
+      ║♟]░░▓▓░░▓▓♟]♟]♟]║
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓░░▓▓░░║
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓░░▓▓░░║
+      ║♙]♙]♙]▓▓░░♙]♙]♙]║
+      ║▓▓░░▓▓░░▓▓░░♔]░░║
+      ╚════════════════╝ := by
+  move "Re1"
+  checkmate
+
+theorem white_wins_promotion_back_rank :
+    ForcedWin .white
+      ╔════════════════╗
+      ║░░▓▓░░▓▓░░▓▓♚]▓▓║
+      ║♟]░░♙]░░▓▓♟]♟]♟]║
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓░░▓▓░░║
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓░░▓▓░░║
+      ║♙]♙]░░▓▓░░♙]♙]♙]║
+      ║▓▓░░▓▓░░▓▓░░♔}░░║
+      ╚════════════════╝ := by
+  move "c8=R"
+  checkmate
+
+theorem black_wins_promotion :
+    ForcedWin .black
+      ╔════════════════╗
+      ║░░▓▓░░▓▓░░▓▓♚}▓▓║
+      ║♟]░░▓▓░░▓▓♟]♟]♟]║
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓░░▓▓░░║
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓♙]♙]♗]║
+      ║♙]♙]░░▓▓♟]♙]♔]♙]║
+      ║▓▓░░▓▓░░▓▓♘]♖]♖]║
+      ╚════════════════╝ := by
+  move "e1=N"
+  checkmate
+
+/-
+Timman-Short 1990
+(from https://en.wikipedia.org/wiki/Smothered_mate)
+-/
+theorem smothered_mate :
+    ForcedWin .white
+      ╔════════════════╗
+      ║▓▓░░▓▓░░♜]░░▓▓♚]║
+      ║♟]▓▓♟]♖]♙]▓▓♟]♟]║
+      ║▓▓░░♟]░░▓▓░░▓▓░░║
+      ║░░▓▓░░▓▓░░♟]♘]▓▓║
+      ║▓▓░░♕]░░▓▓░░♞]░░║
+      ║♛]▓▓░░▓▓░░▓▓♙]▓▓║
+      ║♙]░░▓▓░░♙]♙]▓▓♙]║
+      ║░░▓▓░░▓▓░░▓▓♔}▓▓║
+      ╚════════════════╝ := by
+  move "Nf7"
+  opponent_move
+  move "Nh6"
+  opponent_move
+  move "Qg8"
+  opponent_move
+  move "Nf7"
+  checkmate
+
+/-
+set_option maxHeartbeats 3000000 in
+theorem emms115 :
+    ForcedWin .white
+      ╔════════════════╗
+      ║♚]▓▓░░▓▓░░▓▓░░♜]║
+      ║♟]♝]♗]♘]▓▓░░♟]♟]║
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║♙]░░♞]░░▓▓░░▓▓░░║
+      ║░░♝]♙]▓▓░░▓▓░░▓▓║
+      ║▓▓♙]▓▓░░▓▓░░♙]░░║
+      ║░░▓▓░░♜]░░♙]♗]♙]║
+      ║♖]░░▓▓░░▓▓♖]♔}░░║
+      ╚════════════════╝ := by
+  move "Nb6"
+  opponent_move
+  move "a×b6"
+  opponent_move
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+-/
+
+/-
+set_option maxHeartbeats 3000000 in
+theorem emms_140 :
+    ForcedWin .white
+      ╔════════════════╗
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║▓▓░░▓▓♚]▓▓░░▓▓░░║
+      ║░░♜]♟]▓▓♖]▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓░░♟]░░║
+      ║♙]♟]░░▓▓░░♜]░░▓▓║
+      ║♞]♗]▓▓░░▓▓♖]♔}░░║
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓░░▓▓░░║
+      ╚════════════════╝ := by
+  move "Rd3"
+  opponent_move
+  · sorry
+  · sorry
+  · sorry
+  --move "Re8"
+-/
+
+/-
+set_option maxHeartbeats 3000000 in
+theorem emms_144 :
+    ForcedWin .white
+      ╔════════════════╗
+      ║░░▓▓░░▓▓░░▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓░░♕]♟]║
+      ║░░♟]♛]▓▓░░▓▓♝]▓▓║
+      ║▓▓░░▓▓♟]▓▓♟]♚]░░║
+      ║░░▓▓░░♙]░░▓▓░░▓▓║
+      ║▓▓░░▓▓░░♘]░░♙]░░║
+      ║♙]♙]░░▓▓░░♙]░░♔}║
+      ║▓▓░░▓▓░░▓▓░░▓▓░░║
+      ╚════════════════╝ := by
+  move "f4"
+  opponent_move
+  move "g4"
+  opponent_move
+  · move "Qe5"
+    opponent_move
+    · move "Q×f5"
+      opponent_move <;> (move "Qg5"; checkmate)
+    · move "N×g4"
+      checkmate
+    · move "Qg5"
+      checkmate
+  · move "Qh6"
+    opponent_move
+    move "Q×h5"
+    checkmate
+-/
+
+/-
+set_option maxHeartbeats 3000000 in
+theorem emms_145 :
+    ForcedWin .black
+      ╔════════════════╗
+      ║░░▓▓░░▓▓░░♝]♜]♚}║
+      ║▓▓░░▓▓░░▓▓♟]♜]♟]║
+      ║♗]▓▓░░▓▓♟]▓▓░░▓▓║
+      ║♘]░░♟]░░▓▓░░▓▓░░║
+      ║♙]▓▓░░▓▓♙]▓▓░░▓▓║
+      ║▓▓░░♘]░░▓▓♞]▓▓♛]║
+      ║░░▓▓♖]▓▓♕]▓▓♙]▓▓║
+      ║▓▓░░▓▓♖]▓▓♔]▓▓░░║
+      ╚════════════════╝ := by
+  move "Qh1"
+  opponent_move
+  move "R×g2"
+  opponent_move
+  · move "Qh3"
+    opponent_move
+    move "Qg3"
+    checkmate
+  · move "Qh6"
+    opponent_move
+    · -- need to disambiguate which rook
+      sorry
+    · move "Ne5"
+      checkmate
+-/
+
+/-
+set_option maxHeartbeats 3000000 in
+theorem emms_151 :
+    ForcedWin .black
+      ╔════════════════╗
+      ║░░▓▓░░♜]░░▓▓░░♚}║
+      ║♖]♖]▓▓░░▓▓░░♟]░░║
+      ║░░▓▓░░▓▓░░♟]░░▓▓║
+      ║▓▓░░▓▓░░♟]░░▓▓░░║
+      ║░░▓▓♗]▓▓░░▓▓♝]♟]║
+      ║▓▓♙]▓▓░░▓▓♜]▓▓░░║
+      ║░░▓▓░░▓▓♘]▓▓░░▓▓║
+      ║▓▓░░▓▓░░▓▓░░♔]░░║
+      ╚════════════════╝ := by
+  move "Rd1"
+  opponent_move
+  rotate_left
+  · move "Rf2"
+    checkmate
+  · move "h3"
+    opponent_move
+    move "Rf2"
+    opponent_move
+    move "Rg2"
+    opponent_move
+    move "g5"
+    checkmate
+-/
+
+/-
+theorem morphy_mates_in_two :
+    ForcedWin .white
+      ╔════════════════╗
+      ║░░▓▓░░▓▓♚]♝]░░♜]║
+      ║♟]░░▓▓♞]▓▓♟]♟]♟]║
+      ║░░▓▓░░▓▓♛]▓▓░░▓▓║
+      ║▓▓░░▓▓░░♟]░░♗]░░║
+      ║░░▓▓░░▓▓♙]▓▓░░▓▓║
+      ║▓▓♕]▓▓░░▓▓░░▓▓░░║
+      ║♙]♙]♙]▓▓░░♙]♙]♙]║
+      ║▓▓░░♔}♖]▓▓░░▓▓░░║
+      ╚════════════════╝ := by
+  move "Qb8"
+  opponent_move
+  move "Rd8"
+  checkmate
+-/
+
+/-
+theorem generic_game : ForcedWin .white game_start := by
+  move "e4"
+  opponent_move
+  · move "d4"
+    sorry
+  · move "Ke2"
+    sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorrys
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+  · sorry
+-/
